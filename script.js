@@ -96,17 +96,21 @@
         }
     }
 
-    function onMouseMove(e) {
+    function updateProximity(clientX, clientY) {
         var rect = solarSystem.getBoundingClientRect();
-        var mx = e.clientX - rect.left - center.x;
-        var my = e.clientY - rect.top - center.y;
+        var scale = rect.width / 900;
+        var mx = (clientX - rect.left) / scale - center.x;
+        var my = (clientY - rect.top) / scale - center.y;
         var dist = Math.sqrt(mx * mx + my * my);
         proximity = Math.max(0, Math.min(1, 1 - dist / maxRadius));
     }
 
+    function onMouseMove(e) {
+        updateProximity(e.clientX, e.clientY);
+    }
+
     function startAnimation() {
         hovering = true;
-        solarSystem.addEventListener('mousemove', onMouseMove);
         if (!speedInterval) {
             speedInterval = setInterval(speedStep, 100);
         }
@@ -119,11 +123,31 @@
 
     function stopAnimation() {
         hovering = false;
-        solarSystem.removeEventListener('mousemove', onMouseMove);
     }
 
-    solarSystem.addEventListener('mouseenter', startAnimation);
-    solarSystem.addEventListener('mouseleave', stopAnimation);
+    // Mouse
+    solarSystem.addEventListener('mouseenter', function () {
+        solarSystem.addEventListener('mousemove', onMouseMove);
+        startAnimation();
+    });
+    solarSystem.addEventListener('mouseleave', function () {
+        solarSystem.removeEventListener('mousemove', onMouseMove);
+        stopAnimation();
+    });
+
+    // Touch
+    solarSystem.addEventListener('touchstart', function (e) {
+        e.preventDefault();
+        updateProximity(e.touches[0].clientX, e.touches[0].clientY);
+        startAnimation();
+    }, { passive: false });
+    solarSystem.addEventListener('touchmove', function (e) {
+        e.preventDefault();
+        updateProximity(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: false });
+    solarSystem.addEventListener('touchend', function () {
+        stopAnimation();
+    });
 
     // Scale solar system to fit viewport
     function fitToViewport() {
