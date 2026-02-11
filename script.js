@@ -135,17 +135,17 @@
         stopAnimation();
     });
 
-    // Touch
-    solarSystem.addEventListener('touchstart', function (e) {
+    // Touch — bind on document so touches anywhere on screen work
+    document.addEventListener('touchstart', function (e) {
         e.preventDefault();
         updateProximity(e.touches[0].clientX, e.touches[0].clientY);
         startAnimation();
     }, { passive: false });
-    solarSystem.addEventListener('touchmove', function (e) {
+    document.addEventListener('touchmove', function (e) {
         e.preventDefault();
         updateProximity(e.touches[0].clientX, e.touches[0].clientY);
     }, { passive: false });
-    solarSystem.addEventListener('touchend', function () {
+    document.addEventListener('touchend', function () {
         stopAnimation();
     });
 
