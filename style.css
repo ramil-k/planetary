@@ -1,0 +1,85 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #fff;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    overflow: hidden;
+}
+
+.solar-system {
+    position: relative;
+    width: 900px;
+    height: 600px;
+}
+
+/* Logo = "и" at center */
+.logo {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    color: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.logo:hover {
+    color: #2962ff;
+}
+
+/* Elliptic orbit rings - ratio ~1.7 */
+.orbit {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.07);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+.orbit-1 { width: 122px;  height: 72px; }
+.orbit-2 { width: 170px;  height: 100px; }
+.orbit-3 { width: 238px;  height: 140px; }
+.orbit-4 { width: 306px;  height: 180px; }
+.orbit-5 { width: 374px;  height: 220px; }
+.orbit-6 { width: 442px;  height: 260px; }
+.orbit-7 { width: 510px;  height: 300px; }
+.orbit-8 { width: 578px;  height: 340px; }
+.orbit-9 { width: 646px;  height: 380px; }
+
+/* Flying buttons - no bg, no radius, black text */
+.btn {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    color: #000;
+    font-family: 'Inter', sans-serif;
+    font-size: 18px;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    text-transform: lowercase;
+    padding: 8px;
+    z-index: 5;
+    will-change: transform;
+    transition: color 0.2s ease;
+}
+
+.btn:hover {
+    color: #2962ff;
+}
