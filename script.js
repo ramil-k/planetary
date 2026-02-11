@@ -8,11 +8,11 @@
     // п on outermost orbit = furthest left
     var planets = [
         { sel: '.btn-p',  a: 323, b: 190, speed: 0.20, dir:  1, angle: Math.PI },  // п - leftmost
-        { sel: '.btn-l',  a: 255, b: 150, speed: 0.26, dir: -1, angle: Math.PI },  // л
-        { sel: '.btn-a1', a: 187, b: 110, speed: 0.34, dir:  1, angle: Math.PI },  // а
-        { sel: '.btn-n',  a: 289, b: 170, speed: 0.23, dir: -1, angle: Math.PI },  // н
-        { sel: '.btn-e',  a: 153, b: 90,  speed: 0.38, dir:  1, angle: Math.PI },  // е
-        { sel: '.btn-t',  a: 221, b: 130, speed: 0.30, dir: -1, angle: Math.PI },  // т
+        { sel: '.btn-l',  a: 289, b: 170, speed: 0.23, dir: -1, angle: Math.PI },  // л
+        { sel: '.btn-a1', a: 255, b: 150, speed: 0.26, dir:  1, angle: Math.PI },  // а
+        { sel: '.btn-n',  a: 221, b: 130, speed: 0.30, dir: -1, angle: Math.PI },  // н
+        { sel: '.btn-e',  a: 187, b: 110, speed: 0.34, dir:  1, angle: Math.PI },  // е
+        { sel: '.btn-t',  a: 153, b: 90,  speed: 0.38, dir: -1, angle: Math.PI },  // т
         { sel: '.btn-a2', a: 119, b: 70,  speed: 0.44, dir:  1, angle: Math.PI },  // а
         { sel: '.btn-r',  a: 85,  b: 50,  speed: 0.52, dir: -1, angle: Math.PI },  // р
         { sel: '.btn-j',  a: 61,  b: 36,  speed: 0.62, dir:  1, angle: 0 },        // й - right of logo
