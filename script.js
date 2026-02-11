@@ -33,9 +33,7 @@
         planets.forEach(function (p) {
             var x = center.x + p.a * Math.cos(p.angle);
             var y = center.y + p.b * Math.sin(p.angle);
-            p.el.style.left = x + 'px';
-            p.el.style.top = y + 'px';
-            p.el.style.transform = 'translate(-50%, -50%)';
+            p.el.style.transform = 'translate(calc(' + x + 'px - 50%), calc(' + y + 'px - 50%))';
         });
     }
 
