@@ -46,39 +46,29 @@
     var lastTime = 0;
     var speedInterval = null;
     var proximity = 0; // 0 = edge, 1 = center
+    var TWO_PI = 2 * Math.PI;
+    var RETURN_DURATION = 2.0; // seconds for ease-out return
 
-    // Speed step runs every 100ms (like intuition.team algorithm)
-    function speedStep() {
-        var anyMoving = false;
-        planets.forEach(function (p) {
-            var target = p.maxSpeed * proximity * proximity * proximity;
-            if (hovering) {
-                p.decelSnap = null;
-                if (p.speed < target) {
-                    p.speed = Math.min(target, p.speed + p.accel);
-                } else {
-                    p.speed = Math.max(target, Math.floor(p.speed / p.decel * 1000) / 1000);
-                }
-                anyMoving = true;
-            } else {
-                var d = p.decelSnap ?? p.decel;
-                p.speed = Math.max(0, Math.floor(p.speed / d * 1000) / 1000);
-                if (p.speed > 0.001) {
-                    anyMoving = true;
-                } else {
-                    p.speed = 0;
-                    p.decelSnap = null;
-                }
-            }
-        });
-        if (!anyMoving) {
-            clearInterval(speedInterval);
-            speedInterval = null;
-            render();
-        }
+    // Ease-out cubic: decelerates smoothly to zero velocity
+    function easeOutCubic(t) {
+        return 1 - Math.pow(1 - t, 3);
     }
 
-    // rAF loop: update angles based on per-planet speed
+    // Speed step runs every 100ms (like intuition.team algorithm)
+    // Only active while hovering
+    function speedStep() {
+        if (!hovering) return;
+        planets.forEach(function (p) {
+            var target = p.maxSpeed * proximity * proximity * proximity;
+            if (p.speed < target) {
+                p.speed = Math.min(target, p.speed + p.accel);
+            } else {
+                p.speed = Math.max(target, Math.floor(p.speed / p.decel * 1000) / 1000);
+            }
+        });
+    }
+
+    // rAF loop: update angles based on per-planet speed or return animation
     function tick(timestamp) {
         if (!lastTime) lastTime = timestamp;
         var dt = (timestamp - lastTime) / 1000;
@@ -87,7 +77,18 @@
 
         var anyMoving = false;
         planets.forEach(function (p) {
-            if (p.speed > 0) {
+            if (p.returning) {
+                var elapsed = (timestamp - p.returnStart) / 1000;
+                var t = Math.min(1, elapsed / p.returnDuration);
+                p.angle = p.returnFrom + (p.returnTo - p.returnFrom) * easeOutCubic(t);
+                if (t < 1) {
+                    anyMoving = true;
+                } else {
+                    p.angle = p.initialAngle;
+                    p.returning = false;
+                    p.speed = 0;
+                }
+            } else if (p.speed > 0) {
                 p.angle += p.speed * p.dir * dt;
                 anyMoving = true;
             }
@@ -117,6 +118,8 @@
 
     function startAnimation() {
         hovering = true;
+        // Cancel any return animations
+        planets.forEach(function (p) { p.returning = false; });
         if (!speedInterval) {
             speedInterval = setInterval(speedStep, 100);
         }
@@ -127,42 +130,43 @@
         }
     }
 
-    // Normalize angle to [0, 2*PI)
-    function normalizeAngle(a) {
-        a = a % (2 * Math.PI);
-        return a < 0 ? a + 2 * Math.PI : a;
-    }
-
-    // When interaction stops, compute per-planet decel so it lands on initialAngle.
-    // Total distance with geometric decel: S = speed * tickDt * decel / (decel - 1)
-    // We need S = remainingAngle, so decel = S / (S - speed * tickDt)
-    function snapDecel() {
-        var tickDt = 0.1; // speed step interval
+    // When interaction stops, start ease-out return to initial angle.
+    // Each planet continues in its direction for at least one more revolution,
+    // landing exactly on initialAngle. Duration scales with current speed.
+    function startReturn(timestamp) {
         planets.forEach(function (p) {
-            if (p.speed <= 0) return;
-            // Distance per first tick
-            var stepDist = p.speed * tickDt;
-            // How far to the next initial angle position (in the direction of travel)
-            var current = normalizeAngle(p.angle);
-            var target = normalizeAngle(p.initialAngle);
-            var remaining = target - current;
-            // Ensure we go forward (at least one more full revolution to look smooth)
-            if (p.dir > 0) {
-                if (remaining <= stepDist) remaining += 2 * Math.PI;
-            } else {
-                remaining = -remaining;
-                if (remaining <= stepDist) remaining += 2 * Math.PI;
+            if (p.speed <= 0) {
+                p.angle = p.initialAngle;
+                return;
             }
-            // decel = remaining / (remaining - stepDist)
-            var d = remaining / (remaining - stepDist);
-            // Clamp to reasonable range
-            p.decelSnap = Math.max(1.01, Math.min(d, 1.5));
+            // Find target: initialAngle + enough full rotations in travel direction
+            var from = p.angle;
+            var target = p.initialAngle;
+            // Normalize difference into travel direction
+            var diff = (target - from) * p.dir;
+            // Wrap to positive
+            diff = ((diff % TWO_PI) + TWO_PI) % TWO_PI;
+            // Add at least one full revolution so it doesn't just stop
+            diff += TWO_PI;
+            // Scale duration by speed ratio (faster = longer coast)
+            var speedRatio = p.speed / p.maxSpeed;
+            p.returnFrom = from;
+            p.returnTo = from + diff * p.dir;
+            p.returnStart = timestamp;
+            p.returnDuration = RETURN_DURATION * (0.5 + 0.5 * speedRatio);
+            p.returning = true;
+            p.speed = 0;
         });
     }
 
     function stopAnimation() {
         hovering = false;
-        snapDecel();
+        clearInterval(speedInterval);
+        speedInterval = null;
+        // Use current timestamp for return start
+        requestAnimationFrame(function (ts) {
+            startReturn(ts);
+        });
     }
 
     // Mouse
