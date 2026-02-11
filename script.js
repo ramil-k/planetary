@@ -124,4 +124,19 @@
 
     solarSystem.addEventListener('mouseenter', startAnimation);
     solarSystem.addEventListener('mouseleave', stopAnimation);
+
+    // Scale solar system to fit viewport
+    function fitToViewport() {
+        var vw = window.innerWidth;
+        var vh = window.innerHeight;
+        var scaleX = vw / 900;
+        var scaleY = vh / 600;
+        var scale = Math.min(scaleX, scaleY);
+        solarSystem.style.transform = scale < 1
+            ? 'translate(-50%, -50%) scale(' + scale + ')'
+            : 'translate(-50%, -50%)';
+    }
+
+    fitToViewport();
+    window.addEventListener('resize', fitToViewport);
 })();
