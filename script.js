@@ -67,7 +67,6 @@
                     anyMoving = true;
                 } else {
                     p.speed = 0;
-                    p.angle = p.initialAngle;
                     p.decelSnap = null;
                 }
             }
