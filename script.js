@@ -23,10 +23,11 @@
         { sel: '.btn-j',  a: 61,  b: 36,  maxSpeed: 24.0, accel: 3.0,  decel: 1.14, dir:  1, angle: 0 },
     ];
 
-    // Initialize DOM refs, per-planet current speed
+    // Initialize DOM refs, per-planet current speed and initial angle
     planets.forEach(function (p) {
         p.el = document.querySelector(p.sel);
         p.speed = 0;
+        p.initialAngle = p.angle;
     });
 
     function render() {
@@ -52,6 +53,7 @@
         planets.forEach(function (p) {
             var target = p.maxSpeed * proximity * proximity * proximity;
             if (hovering) {
+                p.decelSnap = null;
                 if (p.speed < target) {
                     p.speed = Math.min(target, p.speed + p.accel);
                 } else {
@@ -59,14 +61,21 @@
                 }
                 anyMoving = true;
             } else {
-                p.speed = Math.max(0, Math.floor(p.speed / p.decel * 1000) / 1000);
-                if (p.speed > 0.001) anyMoving = true;
-                else p.speed = 0;
+                var d = p.decelSnap ?? p.decel;
+                p.speed = Math.max(0, Math.floor(p.speed / d * 1000) / 1000);
+                if (p.speed > 0.001) {
+                    anyMoving = true;
+                } else {
+                    p.speed = 0;
+                    p.angle = p.initialAngle;
+                    p.decelSnap = null;
+                }
             }
         });
         if (!anyMoving) {
             clearInterval(speedInterval);
             speedInterval = null;
+            render();
         }
     }
 
@@ -119,8 +128,42 @@
         }
     }
 
+    // Normalize angle to [0, 2*PI)
+    function normalizeAngle(a) {
+        a = a % (2 * Math.PI);
+        return a < 0 ? a + 2 * Math.PI : a;
+    }
+
+    // When interaction stops, compute per-planet decel so it lands on initialAngle.
+    // Total distance with geometric decel: S = speed * tickDt * decel / (decel - 1)
+    // We need S = remainingAngle, so decel = S / (S - speed * tickDt)
+    function snapDecel() {
+        var tickDt = 0.1; // speed step interval
+        planets.forEach(function (p) {
+            if (p.speed <= 0) return;
+            // Distance per first tick
+            var stepDist = p.speed * tickDt;
+            // How far to the next initial angle position (in the direction of travel)
+            var current = normalizeAngle(p.angle);
+            var target = normalizeAngle(p.initialAngle);
+            var remaining = target - current;
+            // Ensure we go forward (at least one more full revolution to look smooth)
+            if (p.dir > 0) {
+                if (remaining <= stepDist) remaining += 2 * Math.PI;
+            } else {
+                remaining = -remaining;
+                if (remaining <= stepDist) remaining += 2 * Math.PI;
+            }
+            // decel = remaining / (remaining - stepDist)
+            var d = remaining / (remaining - stepDist);
+            // Clamp to reasonable range
+            p.decelSnap = Math.max(1.01, Math.min(d, 1.5));
+        });
+    }
+
     function stopAnimation() {
         hovering = false;
+        snapDecel();
     }
 
     // Mouse
