@@ -1,6 +1,7 @@
 (function () {
     var solarSystem = document.querySelector('.solar-system');
     var center = { x: 450, y: 300 };
+    var maxRadius = 450; // distance from center to edge of solar-system
 
     // Planets in DOM order: п, л, а, н, е, т, а, р, й
     // Each starts on its orbit. Initial angle places them in a "planet parade"
@@ -11,15 +12,15 @@
     // accel: acceleration step added every 100ms tick (rad/s)
     // decel: deceleration divisor applied every 100ms tick (speed /= decel)
     var planets = [
-        { sel: '.btn-p',  a: 323, b: 190, maxSpeed: 0.30, accel: 0.04, decel: 1.08, dir:  1, angle: Math.PI },
-        { sel: '.btn-l',  a: 289, b: 170, maxSpeed: 0.38, accel: 0.05, decel: 1.09, dir: -1, angle: Math.PI },
-        { sel: '.btn-a1', a: 255, b: 150, maxSpeed: 0.46, accel: 0.06, decel: 1.10, dir:  1, angle: Math.PI },
-        { sel: '.btn-n',  a: 221, b: 130, maxSpeed: 0.54, accel: 0.07, decel: 1.10, dir: -1, angle: Math.PI },
-        { sel: '.btn-e',  a: 187, b: 110, maxSpeed: 0.62, accel: 0.08, decel: 1.11, dir:  1, angle: Math.PI },
-        { sel: '.btn-t',  a: 153, b: 90,  maxSpeed: 0.72, accel: 0.09, decel: 1.11, dir: -1, angle: Math.PI },
-        { sel: '.btn-a2', a: 119, b: 70,  maxSpeed: 0.84, accel: 0.11, decel: 1.12, dir:  1, angle: Math.PI },
-        { sel: '.btn-r',  a: 85,  b: 50,  maxSpeed: 1.00, accel: 0.13, decel: 1.13, dir: -1, angle: Math.PI },
-        { sel: '.btn-j',  a: 61,  b: 36,  maxSpeed: 1.20, accel: 0.15, decel: 1.14, dir:  1, angle: 0 },
+        { sel: '.btn-p',  a: 323, b: 190, maxSpeed: 6.0,  accel: 0.8,  decel: 1.08, dir:  1, angle: Math.PI },
+        { sel: '.btn-l',  a: 289, b: 170, maxSpeed: 7.6,  accel: 1.0,  decel: 1.09, dir: -1, angle: Math.PI },
+        { sel: '.btn-a1', a: 255, b: 150, maxSpeed: 9.2,  accel: 1.2,  decel: 1.10, dir:  1, angle: Math.PI },
+        { sel: '.btn-n',  a: 221, b: 130, maxSpeed: 10.8, accel: 1.4,  decel: 1.10, dir: -1, angle: Math.PI },
+        { sel: '.btn-e',  a: 187, b: 110, maxSpeed: 12.4, accel: 1.6,  decel: 1.11, dir:  1, angle: Math.PI },
+        { sel: '.btn-t',  a: 153, b: 90,  maxSpeed: 14.4, accel: 1.8,  decel: 1.11, dir: -1, angle: Math.PI },
+        { sel: '.btn-a2', a: 119, b: 70,  maxSpeed: 16.8, accel: 2.2,  decel: 1.12, dir:  1, angle: Math.PI },
+        { sel: '.btn-r',  a: 85,  b: 50,  maxSpeed: 20.0, accel: 2.6,  decel: 1.13, dir: -1, angle: Math.PI },
+        { sel: '.btn-j',  a: 61,  b: 36,  maxSpeed: 24.0, accel: 3.0,  decel: 1.14, dir:  1, angle: 0 },
     ];
 
     // Initialize DOM refs, per-planet current speed
@@ -45,13 +46,19 @@
     var animating = false;
     var lastTime = 0;
     var speedInterval = null;
+    var proximity = 0; // 0 = edge, 1 = center
 
     // Speed step runs every 100ms (like intuition.team algorithm)
     function speedStep() {
         var anyMoving = false;
         planets.forEach(function (p) {
+            var target = p.maxSpeed * proximity * proximity * proximity;
             if (hovering) {
-                p.speed = Math.min(p.maxSpeed, p.speed + p.accel);
+                if (p.speed < target) {
+                    p.speed = Math.min(target, p.speed + p.accel);
+                } else {
+                    p.speed = Math.max(target, Math.floor(p.speed / p.decel * 1000) / 1000);
+                }
                 anyMoving = true;
             } else {
                 p.speed = Math.max(0, Math.floor(p.speed / p.decel * 1000) / 1000);
@@ -89,8 +96,17 @@
         }
     }
 
+    function onMouseMove(e) {
+        var rect = solarSystem.getBoundingClientRect();
+        var mx = e.clientX - rect.left - center.x;
+        var my = e.clientY - rect.top - center.y;
+        var dist = Math.sqrt(mx * mx + my * my);
+        proximity = Math.max(0, Math.min(1, 1 - dist / maxRadius));
+    }
+
     function startAnimation() {
         hovering = true;
+        solarSystem.addEventListener('mousemove', onMouseMove);
         if (!speedInterval) {
             speedInterval = setInterval(speedStep, 100);
         }
@@ -103,6 +119,7 @@
 
     function stopAnimation() {
         hovering = false;
+        solarSystem.removeEventListener('mousemove', onMouseMove);
     }
 
     solarSystem.addEventListener('mouseenter', startAnimation);
