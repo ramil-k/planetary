@@ -131,29 +131,35 @@
     }
 
     // When interaction stops, start ease-out return to initial angle.
-    // Each planet continues in its direction for at least one more revolution,
-    // landing exactly on initialAngle. Duration scales with current speed.
+    // Duration is derived from current speed so the easing starts at
+    // exactly the current velocity (no speed-up).
+    // For ease-out cubic f(t) = 1-(1-t)^3, f'(0) = 3, so
+    // initial angular velocity = 3 * totalAngle / duration.
+    // Setting that equal to currentSpeed: duration = 3 * totalAngle / currentSpeed.
     function startReturn(timestamp) {
         planets.forEach(function (p) {
             if (p.speed <= 0) {
                 p.angle = p.initialAngle;
                 return;
             }
-            // Find target: initialAngle + enough full rotations in travel direction
             var from = p.angle;
-            var target = p.initialAngle;
-            // Normalize difference into travel direction
-            var diff = (target - from) * p.dir;
+            // Signed distance to initialAngle in travel direction
+            var diff = (p.initialAngle - from) * p.dir;
             // Wrap to positive
             diff = ((diff % TWO_PI) + TWO_PI) % TWO_PI;
-            // Add at least one full revolution so it doesn't just stop
+            // Add full revolutions so the coast looks natural
             diff += TWO_PI;
-            // Scale duration by speed ratio (faster = longer coast)
-            var speedRatio = p.speed / p.maxSpeed;
+            // Compute duration to match current speed at t=0
+            var totalAngle = diff; // unsigned distance
+            var currentSpeed = p.speed; // unsigned angular speed
+            var duration = 3 * totalAngle / currentSpeed;
+            // Clamp so it doesn't take forever or be too abrupt
+            duration = Math.max(1, Math.min(duration, 6));
+
             p.returnFrom = from;
             p.returnTo = from + diff * p.dir;
             p.returnStart = timestamp;
-            p.returnDuration = RETURN_DURATION * (0.5 + 0.5 * speedRatio);
+            p.returnDuration = duration;
             p.returning = true;
             p.speed = 0;
         });
